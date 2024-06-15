@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableWithoutFeedback, Keyboard, Alert, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableWithoutFeedback, Keyboard, Alert, Modal, TouchableOpacity, ScrollView, TextInput, Button } from 'react-native';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Configuração do Firebase
@@ -24,6 +24,7 @@ export default function NoticesScreen() {
   const [notices, setNotices] = useState([]);
   const [selectedNotice, setSelectedNotice] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [response, setResponse] = useState('');
 
   useEffect(() => {
     console.log('Setting up Firebase subscription...');
@@ -52,12 +53,32 @@ export default function NoticesScreen() {
 
   const openModal = (notice) => {
     setSelectedNotice(notice);
+    setResponse(notice.response || '');
     setModalVisible(true);
   };
 
   const closeModal = () => {
     setModalVisible(false);
     setSelectedNotice(null);
+    setResponse('');
+  };
+
+  const handleSendResponse = async () => {
+    if (selectedNotice && response.trim()) {
+      try {
+        const noticeRef = doc(db, 'notices', selectedNotice.id);
+        await updateDoc(noticeRef, {
+          response: response.trim(),
+        });
+        Alert.alert('Resposta enviada', 'Sua resposta foi enviada com sucesso.');
+        setSelectedNotice({ ...selectedNotice, response: response.trim() });
+        closeModal();
+      } catch (error) {
+        Alert.alert('Erro', 'Erro ao enviar resposta: ' + error.message);
+      }
+    } else {
+      Alert.alert('Aviso', 'Por favor, escreva uma resposta antes de enviar.');
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -88,7 +109,7 @@ export default function NoticesScreen() {
         />
         {selectedNotice && (
           <Modal
-            animationType="fade"
+            animationType="slide"
             transparent={true}
             visible={modalVisible}
             onRequestClose={closeModal}
@@ -99,6 +120,22 @@ export default function NoticesScreen() {
                   <Text style={styles.modalTitle}>{selectedNotice.title}</Text>
                   <Text style={styles.modalMessage}>{selectedNotice.message}</Text>
                   <Text style={styles.modalDate}>{new Date(selectedNotice.date.seconds * 1000).toLocaleDateString()}</Text>
+                  {selectedNotice.response && (
+                    <View style={styles.responseContainer}>
+                      <Text style={styles.responseTitle}>Resposta:</Text>
+                      <Text style={styles.responseText}>{selectedNotice.response}</Text>
+                    </View>
+                  )}
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Escreva sua resposta..."
+                    value={response}
+                    onChangeText={setResponse}
+                    multiline
+                  />
+                  <TouchableOpacity onPress={handleSendResponse} style={styles.sendButton}>
+                    <Text style={styles.sendButtonText}>Enviar Resposta</Text>
+                  </TouchableOpacity>
                   <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
                     <Text style={styles.closeButtonText}>Fechar</Text>
                   </TouchableOpacity>
@@ -168,14 +205,47 @@ const styles = StyleSheet.create({
     color: '#888',
     marginBottom: 20,
   },
-  closeButton: {
+  input: {
+    height: 100,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 20,
+    textAlignVertical: 'top',
+  },
+  sendButton: {
     backgroundColor: '#2196F3',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  sendButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  closeButton: {
+    backgroundColor: '#888',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
   },
   closeButtonText: {
     color: 'white',
+    fontSize: 16,
+  },
+  responseContainer: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: '#f1f1f1',
+    borderRadius: 8,
+  },
+  responseTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  responseText: {
     fontSize: 16,
   },
 });

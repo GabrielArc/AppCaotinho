@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
+import { View, TextInput, Button, TouchableWithoutFeedback, Keyboard, Alert, Text } from 'react-native';
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
@@ -59,6 +59,7 @@ export default function LoginScreen({ navigation }) {
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
+        <Text style={{ fontSize: 32, fontWeight: 'bold', marginBottom: 20 }}>Cãotinho</Text>
         <TextInput
           style={{ height: 40, width: '100%', marginBottom: 20, borderWidth: 1, borderColor: '#ccc', paddingHorizontal: 10 }}
           placeholder="Email"
